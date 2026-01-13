@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Playwright POM Helper",
+  "version": "2.1",
+  "description": "一键生成 Playwright Page Object 代码",
+  "permissions": ["activeTab", "scripting"],
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["config.js", "utils.js", "ui.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

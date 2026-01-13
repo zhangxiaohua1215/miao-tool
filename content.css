@@ -1,0 +1,429 @@
+/* POM Helper 浮窗样式 */
+#pom-helper-panel {
+  position: fixed;
+  top: 20px;
+  right: 100px;
+  width: 500px;
+  min-width: 380px;
+  max-width: 90vw;
+  min-height: 300px;
+  max-height: 90vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  z-index: 999999;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: #e8e8e8;
+  overflow: hidden;
+  resize: both;
+  display: flex;
+  flex-direction: column;
+}
+
+#pom-helper-panel.minimized {
+  height: 48px !important;
+}
+
+#pom-helper-panel.minimized .pom-body {
+  display: none;
+}
+
+/* 标题栏 - 可拖拽 */
+.pom-header {
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  user-select: none;
+}
+
+.pom-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pom-logo {
+  font-size: 18px;
+}
+
+.pom-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.pom-header-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.pom-header-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.pom-header-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 主体内容 */
+.pom-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 模式切换 */
+.pom-mode-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pom-mode-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #3d4f6f;
+  background: transparent;
+  color: #8892b0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pom-mode-btn:hover {
+  border-color: #e94560;
+  color: #e94560;
+}
+
+.pom-mode-btn.active {
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  border-color: transparent;
+  color: white;
+}
+
+/* 已选元素列表 */
+.pom-selected-label {
+  font-size: 12px;
+  color: #8892b0;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pom-count {
+  background: rgba(233, 69, 96, 0.2);
+  color: #e94560;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.pom-selected-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.pom-selected-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.pom-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pom-item-type {
+  background: rgba(233, 69, 96, 0.2);
+  color: #e94560;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.pom-item-name {
+  color: #a8b2d1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pom-item-delete {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #6e7681;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.pom-item-delete:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff6b6b;
+}
+
+.pom-empty {
+  text-align: center;
+  padding: 24px;
+  color: #6e7681;
+  font-size: 12px;
+}
+
+/* 代码预览 */
+.pom-code-wrapper {
+  flex: 1;
+  min-height: 150px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.pom-code-area {
+  flex: 1;
+  margin: 0;
+  padding: 14px;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre;
+  overflow: auto;
+  color: #abb2bf;
+}
+
+/* 语法高亮 - One Dark 主题风格 */
+.pom-code-area .keyword {
+  color: #c678dd;
+  font-weight: 500;
+}
+
+.pom-code-area .class-name {
+  color: #e5c07b;
+}
+
+.pom-code-area .type {
+  color: #56b6c2;
+}
+
+.pom-code-area .string {
+  color: #98c379;
+}
+
+.pom-code-area .property {
+  color: #e06c75;
+}
+
+.pom-code-area .method {
+  color: #61afef;
+}
+
+.pom-code-area .comment {
+  color: #5c6370;
+  font-style: italic;
+}
+
+.pom-code-area .punctuation {
+  color: #abb2bf;
+}
+
+.pom-code-area .decorator {
+  color: #d19a66;
+}
+
+/* 操作按钮 */
+.pom-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pom-action-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pom-action-btn.primary {
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  color: white;
+}
+
+.pom-action-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+}
+
+.pom-action-btn.secondary {
+  background: transparent;
+  border: 1px solid #3d4f6f;
+  color: #8892b0;
+}
+
+.pom-action-btn.secondary:hover {
+  border-color: #e94560;
+  color: #e94560;
+}
+
+/* 点选模式高亮 */
+.pom-highlight-hover {
+  outline: 3px dashed #e94560 !important;
+  outline-offset: 2px;
+  cursor: crosshair !important;
+}
+
+.pom-highlight-selected {
+  outline: 3px solid #10b981 !important;
+  outline-offset: 2px;
+}
+
+/* 元素标签 */
+.pom-element-label {
+  position: absolute;
+  z-index: 999998;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #e94560 0%, #d63850 100%);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 12px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(233, 69, 96, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.pom-label-name {
+  font-weight: 600;
+}
+
+.pom-label-type {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* 提示信息 */
+.pom-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #238636;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+  z-index: 9999999;
+}
+
+.pom-toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.pom-toast.error {
+  background: #da3633;
+}
+
+/* 点选提示条 */
+.pom-pick-hint {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  color: white;
+  text-align: center;
+  padding: 10px;
+  font-size: 13px;
+  z-index: 9999998;
+  display: none;
+}
+
+.pom-pick-hint.show {
+  display: block;
+}
+
+/* 滚动条样式 */
+.pom-selected-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pom-selected-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pom-selected-list::-webkit-scrollbar-thumb {
+  background: #3d4f6f;
+  border-radius: 3px;
+}
+
+.pom-code-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pom-code-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pom-code-area::-webkit-scrollbar-thumb {
+  background: #3d4f6f;
+  border-radius: 3px;
+}
+
