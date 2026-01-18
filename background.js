@@ -25,14 +25,24 @@ chrome.action.onClicked.addListener(async (tab) => {
         files: ['config.js', 'utils.js', 'ui.js', 'content.js']
       });
 
-      // 等待一下再发送消息
-      setTimeout(async () => {
-        try {
-          await chrome.tabs.sendMessage(tab.id, { action: 'togglePanel' });
-        } catch (e) {
-          console.error('POM Helper: 发送消息失败', e);
+      // 使用重试机制确保脚本加载完成
+      const sendMessageWithRetry = async (retries = 5, delay = 50) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            await chrome.tabs.sendMessage(tab.id, { action: 'togglePanel' });
+            return; // 成功则退出
+          } catch (e) {
+            if (i === retries - 1) {
+              console.error('POM Helper: 发送消息失败，已重试', retries, '次', e);
+            } else {
+              // 等待后重试，延迟逐渐增加
+              await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            }
+          }
         }
-      }, 100);
+      };
+
+      sendMessageWithRetry();
     } catch (e) {
       console.error('POM Helper: 无法在此页面使用', e);
     }

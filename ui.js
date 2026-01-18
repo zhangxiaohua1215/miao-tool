@@ -165,16 +165,36 @@ window.POMUI = {
         <div class="pom-selected-item">
           <div class="pom-item-info">
             <span class="pom-item-type">${item.type}</span>
-            <span class="pom-item-name">${item.name}</span>
+            <input 
+              class="pom-item-name-input" 
+              value="${item.name}" 
+              data-index="${idx}"
+              placeholder="element${idx + 1}"
+            />
           </div>
           <button class="pom-item-delete" data-index="${idx}">✕</button>
         </div>
       `).join('');
 
+      // 监听删除按钮
       list.querySelectorAll('.pom-item-delete').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const index = parseInt(e.target.dataset.index);
           onDelete(index);
+        });
+      });
+
+      // 监听名称输入框
+      list.querySelectorAll('.pom-item-name-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          const newName = e.target.value.trim() || `element${index + 1}`;
+
+          // 触发自定义事件，通知 content.js 更新名称
+          const event = new CustomEvent('pom-name-change', {
+            detail: { index, newName }
+          });
+          document.dispatchEvent(event);
         });
       });
     }
@@ -192,7 +212,7 @@ window.POMUI = {
   setModeActive(mode) {
     const pickBtn = document.getElementById('pom-pick-mode');
     const scanBtn = document.getElementById('pom-scan-mode');
-    
+
     if (mode === 'pick') {
       pickBtn?.classList.add('active');
       scanBtn?.classList.remove('active');

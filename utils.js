@@ -1,27 +1,11 @@
 // POM Helper - 工具函数
 
 window.POMUtils = {
-  // 中文转英文
-  translateZh(text) {
-    if (!text) return '';
-    text = text.trim();
-    const zhToEn = POMConfig.zhToEn;
-
-    // 直接匹配
-    if (zhToEn[text]) return zhToEn[text];
-
-    // 部分匹配
-    for (const [zh, en] of Object.entries(zhToEn)) {
-      if (text.includes(zh)) return en;
-    }
-
-    // 如果是纯英文，直接返回
-    if (/^[a-zA-Z0-9_]+$/.test(text)) {
-      return text.charAt(0).toLowerCase() + text.slice(1);
-    }
-
-    // 兜底
-    return 'element';
+  // 转义选择器中的特殊字符
+  escapeSelector(str) {
+    if (!str) return '';
+    // 转义引号、反斜杠等特殊字符
+    return str.replace(/["'\\]/g, '\\$&');
   },
 
   // 驼峰命名
@@ -31,155 +15,186 @@ window.POMUtils = {
       .replace(/^./, c => c.toLowerCase());
   },
 
-  // 获取元素的智能名称
-  getSmartName(el, type) {
-    // 1. 优先使用 data-testid
-    if (el.dataset && el.dataset.testid) {
-      return this.toCamelCase(el.dataset.testid);
+  // 获取元素的智能名称（简单策略）
+  // 传入 selectedElements 数组用于统计同类型数量
+  getSmartName(el, type, selectedElements) {
+    // 统计已选元素中相同类型的数量
+    const sameTypeCount = selectedElements.filter(item => item.type === type).length;
+
+    // 类型名转小写作为基础名称
+    const baseName = type.toLowerCase();
+
+    // 如果已经有同类型的元素，加上序号（从1开始）
+    if (sameTypeCount > 0) {
+      return `${baseName}${sameTypeCount + 1}`;
     }
 
-    // 2. 使用 id
-    if (el.id && !/^\d/.test(el.id)) {
-      return this.toCamelCase(el.id);
-    }
-
-    // 3. 按钮：用文字内容
-    if (type === 'Button' || el.tagName === 'BUTTON') {
-      const text = el.textContent?.trim().slice(0, 10);
-      if (text) {
-        const enName = this.translateZh(text);
-        return enName + 'Btn';
-      }
-    }
-
-    // 4. 输入框：用 placeholder 或关联 label
-    if (type === 'Input' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-      const placeholder = el.placeholder?.trim().slice(0, 10);
-      if (placeholder) {
-        const enName = this.translateZh(placeholder.replace('请输入', '').replace('请选择', ''));
-        if (enName && enName !== 'element') return enName + 'Input';
-      }
-
-      const label = document.querySelector(`label[for="${el.id}"]`);
-      if (label) {
-        const enName = this.translateZh(label.textContent?.trim().slice(0, 10));
-        if (enName && enName !== 'element') return enName + 'Input';
-      }
-    }
-
-    // 5. 使用 aria-label
-    if (el.getAttribute('aria-label')) {
-      const enName = this.translateZh(el.getAttribute('aria-label').slice(0, 10));
-      if (enName && enName !== 'element') return enName;
-    }
-
-    // 6. 使用 name 属性
-    if (el.name) {
-      return this.toCamelCase(el.name);
-    }
-
-    // 7. 兜底
-    return type.toLowerCase();
+    // 第一个该类型的元素，直接用类型名
+    return baseName;
   },
 
-  // 获取最佳选择器
+  // 重新命名所有元素（用于删除元素后重新编号）
+  renameElements(selectedElements) {
+    // 按类型分组统计
+    const typeCounters = {};
+
+    selectedElements.forEach(item => {
+      const type = item.type;
+      const baseName = type.toLowerCase();
+
+      // 初始化计数器
+      if (!typeCounters[type]) {
+        typeCounters[type] = { count: 0, total: 0 };
+      }
+
+      // 先统计总数
+      typeCounters[type].total++;
+    });
+
+    // 重新命名
+    const typeCurrentIndex = {};
+    selectedElements.forEach(item => {
+      const type = item.type;
+      const baseName = type.toLowerCase();
+
+      if (!typeCurrentIndex[type]) {
+        typeCurrentIndex[type] = 0;
+      }
+
+      typeCurrentIndex[type]++;
+
+      // 如果该类型只有1个，直接用类型名
+      if (typeCounters[type].total === 1) {
+        item.name = baseName;
+      } else {
+        // 有多个，加序号
+        item.name = `${baseName}${typeCurrentIndex[type]}`;
+      }
+    });
+  },
+
+  // 获取最佳选择器（通用策略，按优先级从高到低）
   getBestSelector(el) {
     const tag = el.tagName.toLowerCase();
-    const classList = el.className || '';
 
-    // 1. data-testid 最优
-    if (el.dataset && el.dataset.testid) {
-      return `[data-testid="${el.dataset.testid}"]`;
+    // 1. data-testid 最优（专为测试设计的属性）
+    if (el.dataset?.testid) {
+      return `[data-testid="${this.escapeSelector(el.dataset.testid)}"]`;
     }
 
-    // 2. id（排除自动生成的 id）
-    if (el.id && !/^\d/.test(el.id) && !el.id.startsWith('rc-') && el.id.length < 30) {
+    // 2. 稳定的 id（排除自动生成的 id）
+    if (el.id && this.isStableId(el.id)) {
       return `#${el.id}`;
     }
 
-    // 3. Ant Design 组件专用选择器
-    if (classList.includes('ant-table-wrapper')) {
-      const allTables = document.querySelectorAll('.ant-table-wrapper');
-      const index = Array.from(allTables).indexOf(el);
-      return `.ant-table-wrapper >> nth=${index}`;
-    }
-
-    if (classList.includes('ant-pro-table-search')) {
-      return '.ant-pro-table-search';
-    }
-
-    if (classList.includes('ant-select') && !classList.includes('ant-select-open')) {
-      const allSelects = document.querySelectorAll('.ant-select');
-      const index = Array.from(allSelects).indexOf(el);
-      if (allSelects.length === 1) return '.ant-select';
-      return `.ant-select >> nth=${index}`;
-    }
-
-    if (classList.includes('ant-picker')) {
-      const allPickers = document.querySelectorAll('.ant-picker');
-      const index = Array.from(allPickers).indexOf(el);
-      if (allPickers.length === 1) return '.ant-picker';
-      return `.ant-picker >> nth=${index}`;
-    }
-
-    // 4. 按钮 - 优先用文字定位
-    if (tag === 'button' || classList.includes('ant-btn')) {
+    // 3. 按钮 - 优先用文字定位（语义化，可读性强）
+    if (tag === 'button' || el.matches('button, [role="button"]')) {
       const text = el.textContent?.trim();
-      if (text && text.length <= 20) {
-        return `button:has-text("${text}")`;
+      if (text && text.length > 0 && text.length <= 30) {
+        return `button:has-text("${this.escapeSelector(text)}")`;
       }
     }
 
-    // 5. 输入框 - 用 placeholder 定位
-    if (tag === 'input' || classList.includes('ant-input')) {
-      const placeholder = el.placeholder;
-      if (placeholder) {
-        return `input[placeholder="${placeholder}"]`;
+    // 4. 输入框 - 优先用 placeholder 或 name
+    if (tag === 'input' || tag === 'textarea') {
+      if (el.placeholder) {
+        return `${tag}[placeholder="${this.escapeSelector(el.placeholder)}"]`;
       }
-      const name = el.name;
-      if (name) {
-        return `input[name="${name}"]`;
+      if (el.name) {
+        return `${tag}[name="${this.escapeSelector(el.name)}"]`;
       }
     }
 
-    // 6. 通用 class 选择器
-    const meaningfulClasses = Array.from(el.classList || []).filter(c =>
-      c.startsWith('ant-') && (c.includes('btn') || c.includes('input') || c.includes('table') || c.includes('select') || c.includes('form'))
+    // 5. 通用：有意义的 class（如果有的话）
+    const meaningfulClass = this.getMostMeaningfulClass(el);
+    if (meaningfulClass) {
+      return this.buildSelectorWithIndex(`.${meaningfulClass}`, el);
+    }
+
+    // 6. 兜底：元素没有 class 时，使用标签 + 索引
+    return this.buildSelectorWithIndex(tag, el);
+  },
+
+  // 判断 id 是否稳定（非自动生成）
+  isStableId(id) {
+    // 排除纯数字、rc- 开头、uuid 格式等自动生成的 id
+    return (
+      id.length < 50 &&                    // 不要太长
+      !/^\d+$/.test(id) &&                 // 不是纯数字
+      !id.startsWith('rc-') &&             // 不是 rc-components 生成的
+      !id.match(/^[a-f0-9]{8}-[a-f0-9]{4}-/) // 不是 uuid
     );
+  },
 
-    if (meaningfulClasses.length > 0) {
-      const selector = '.' + meaningfulClasses[0];
-      const matches = document.querySelectorAll(selector);
-      if (matches.length === 1) {
-        return selector;
+  // 获取最有意义的 class（优先级：组件根类 > 语义类 > 框架类 > 第一个）
+  getMostMeaningfulClass(el) {
+    const classes = Array.from(el.classList || []);
+    if (classes.length === 0) return null;  // 没有 class 时返回 null，触发标签兜底
+
+    // 1. 优先：组件根类（通常是 xxx-wrapper, xxx-container）
+    const rootClass = classes.find(c =>
+      c.endsWith('-wrapper') || c.endsWith('-container')
+    );
+    if (rootClass) return rootClass;
+
+    // 2. 其次：带语义的类（使用词边界匹配，避免误匹配）
+    const semanticClass = classes.find(c =>
+      /\b(table|form|modal|button|btn|input|select|picker|menu|card|panel)\b/i.test(c)
+    );
+    if (semanticClass) return semanticClass;
+
+    // 3. 再次：第一个有框架前缀的类（如 ant-xxx, el-xxx, van-xxx）
+    const prefixClass = classes.find(c =>
+      c.startsWith('ant-') || c.startsWith('el-') || c.startsWith('van-')
+    );
+    if (prefixClass) return prefixClass;
+
+    // 4. 兜底：返回第一个 class（总比没有强）
+    return classes[0];
+  },
+
+  // 根据选择器构建带索引的完整选择器（优化性能）
+  buildSelectorWithIndex(selector, el) {
+    // 先尝试不带索引（如果唯一）
+    const matches = document.querySelectorAll(selector);
+    if (matches.length === 1) {
+      return selector;
+    }
+
+    // 需要索引，计算位置
+    let index = -1;
+    for (let i = 0; i < matches.length; i++) {
+      if (matches[i] === el) {
+        index = i;
+        break;
       }
-      const index = Array.from(matches).indexOf(el);
-      return `${selector} >> nth=${index}`;
     }
 
-    // 7. 兜底
-    const allSameTags = document.querySelectorAll(tag);
-    const index = Array.from(allSameTags).indexOf(el);
-    if (allSameTags.length === 1) {
-      return tag;
-    }
-    return `${tag} >> nth=${index}`;
+    return index >= 0 ? `${selector} >> nth=${index}` : selector;
   },
 
   // 判断元素类型
   detectElementType(el) {
-    const tag = el.tagName.toLowerCase();
-    const classList = el.className || '';
+    // 获取扫描规则
+    const scanRules = POMConfig.scanRules;
 
-    if (classList.includes('ant-table-wrapper')) return 'Table';
-    if (classList.includes('ant-pro-table-search')) return 'Search';
-    if (classList.includes('ant-modal')) return 'Modal';
-    if (classList.includes('ant-picker')) return 'DatePicker';
-    if (classList.includes('ant-select')) return 'Select';
-    if (tag === 'button' || classList.includes('ant-btn')) return 'Button';
-    if (tag === 'input' || classList.includes('ant-input')) return 'Input';
+    // 遍历扫描规则，看哪个匹配
+    for (const rule of scanRules) {
+      try {
+        if (el.matches(rule.selector)) {
+          return rule.type;
+        }
+      } catch (e) {
+        // 选择器可能无效，跳过
+        continue;
+      }
+    }
+
+    // 兜底：根据标签判断
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'button') return 'Button';
+    if (tag === 'input') return 'Input';
     if (tag === 'textarea') return 'TextArea';
-    if (classList.includes('ant-form')) return 'Form';
     if (tag === 'a') return 'Link';
 
     return 'Locator';
@@ -210,8 +225,25 @@ window.POMUtils = {
     // 3. 关键字
     html = html.replace(/\b(import|from|class|readonly|constructor|private|public|new|this|const|let|var|return|export|default|extends|implements)\b/g, '<span class="keyword">$1</span>');
 
-    // 4. 类型
-    html = html.replace(/:\s*(Page|Locator|Button|Input|Table|Select|TextArea|DatePicker|Modal|Search|Form|Link|string|number|boolean)\b/g, ': <span class="type">$1</span>');
+    // 4. 类型（动态收集）
+    const types = new Set(['Page', 'Locator', 'string', 'number', 'boolean']);
+
+    // 从扫描规则收集组件类型
+    if (POMConfig.scanRules) {
+      POMConfig.scanRules.forEach(rule => {
+        if (rule.type) types.add(rule.type);
+      });
+    }
+
+    // 从基类映射收集基类名称
+    if (POMConfig.baseClassMap) {
+      Object.values(POMConfig.baseClassMap).forEach(baseClass => {
+        if (baseClass.name) types.add(baseClass.name);
+      });
+    }
+
+    const typePattern = new RegExp(`:\\s*(${Array.from(types).join('|')})\\b`, 'g');
+    html = html.replace(typePattern, ': <span class="type">$1</span>');
 
     // 5. 类名
     html = html.replace(/(<span class="keyword">new<\/span>\s*)(\w+)(?=\s*\()/g, '$1<span class="class-name">$2</span>');

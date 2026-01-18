@@ -13,7 +13,8 @@
       "matches": ["<all_urls>"],
       "js": ["config.js", "utils.js", "ui.js", "content.js"],
       "css": ["content.css"],
-      "run_at": "document_end"
+      "run_at": "document_end",
+      "all_frames": true
     }
   ]
 }
